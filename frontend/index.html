@@ -46,6 +46,8 @@
           <label class="check"><input type="checkbox" id="opt-openalex" checked> <span data-i18n="form.openalex"></span></label>
           <label class="check"><input type="checkbox" id="opt-refresh"> <span data-i18n="form.refresh"></span></label>
           <button type="button" class="link" id="demo"><span data-i18n="form.demo"></span> →</button>
+          <button type="button" class="link" data-import><span data-i18n="import.button"></span> ↑</button>
+          <input type="file" id="import-file" accept=".html,.htm,text/html" hidden>
         </div>
       </form>
     </section>
@@ -64,6 +66,11 @@
       <p class="eyebrow" data-i18n="error.eyebrow"></p>
       <h2 class="status__title" id="error-title"></h2>
       <p class="note" id="error-detail"></p>
+      <div class="notice import-help" id="import-help" hidden>
+        <p><strong data-i18n="import.help.title"></strong></p>
+        <p data-i18n="import.help.steps"></p>
+        <button type="button" class="btn btn--primary" data-import><span data-i18n="import.button"></span> <span aria-hidden="true">↑</span></button>
+      </div>
       <button type="button" class="btn" id="retry"><span data-i18n="error.retry"></span> <span aria-hidden="true">↻</span></button>
     </section>
 

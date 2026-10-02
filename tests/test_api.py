@@ -65,3 +65,19 @@ def test_scholar_error_reaches_the_job(client, monkeypatch):
 def test_frontend_is_served(client):
     r = client.get("/")
     assert r.status_code == 200 and "<html" in r.text.lower()
+
+
+def test_import_saved_page(client):
+    from pathlib import Path
+    html = (Path(__file__).parent / "fixtures" / "scholar_profile.html").read_text(encoding="utf-8")
+    job = wait(client, client.post("/api/reports/import", json={"html": html, "openalex": False}).json())
+    assert job["status"] == "done" and job["scholar_id"] == "AbCdEfGhIjKL"
+    report = client.get("/api/reports/AbCdEfGhIjKL").json()
+    assert report["source"] == "import" and report["profile"]["name"] == "Ada Lovelace"
+
+    bad = client.post("/api/reports/import", json={"html": "<html>login</html>"})
+    assert bad.status_code == 400 and bad.json()["error"]["code"] == "import_invalid"
+    no_id = html.replace("AbCdEfGhIjKL", "x").replace("saved from url", "")
+    assert client.post("/api/reports/import", json={"html": no_id}).json()["error"]["code"] == "import_no_id"
+    ok = client.post("/api/reports/import", json={"html": no_id, "query": "ZZZZZZZZZZZZ", "openalex": False}).json()
+    assert wait(client, ok)["scholar_id"] == "ZZZZZZZZZZZZ"

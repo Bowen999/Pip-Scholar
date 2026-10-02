@@ -36,8 +36,9 @@ def subset_stats(pubs):
     }
 
 
-def build_report(author, ni, enrich=None, progress=None, today=None, demo=False):
-    """author: scholar.fetch_author() 的结果；enrich(pubs, name, progress): 作者身份补充（可选）。"""
+def build_report(author, ni, enrich=None, progress=None, today=None, demo=False, source="scholar"):
+    """author: scholar.fetch_author() 或 scholar_html.parse_profile_html() 的结果；
+    enrich(pubs, name, progress): 作者身份补充（可选）；source: scholar | import | demo。"""
     progress = progress or (lambda *a, **k: None)
     today = today or datetime.date.today()
     since = today.year - 5  # 与 Google Scholar "Since 20xx" 口径一致
@@ -85,6 +86,8 @@ def build_report(author, ni, enrich=None, progress=None, today=None, demo=False)
         "version": 1,
         "scholar_id": author["scholar_id"],
         "demo": demo,
+        "source": "demo" if demo else source,
+        "partial": bool(author.get("partial")),  # 导入的网页没有展开全部论文
         "generated_at": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
         "recent_since": since,
         "profile": {

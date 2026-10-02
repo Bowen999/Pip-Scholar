@@ -33,6 +33,9 @@ docs/       用 Figma 生成前端的 prompt
   - Google Scholar：经 scholarly 抓取，频繁请求会触发验证码。
   - OpenAlex：提供作者位置与通讯作者。通讯作者覆盖不全，统计结果为下限。
   - Nature Index 名单：共 178 种，见 `backend/data/`。
+- Google Scholar 被限流（验证码）时有两种办法：
+  - 导入网页：在浏览器打开 Scholar 主页，点「显示更多」直到全部论文展开，按 Ctrl+S 保存，再在应用里点「导入保存的网页」。
+  - 走代理：`SCHOLAR_PROXY=http://用户:密码@主机:端口 python run.py`，或使用付费的 ScraperAPI：`SCRAPERAPI_KEY=… python run.py`。
 - OpenAlex 自 2026 年起按量计费，无 key 每天 $0.10。建议申请免费 key（每天 $1）后这样启动：`OPENALEX_API_KEY=… python run.py`。
 - 引用地图（可选）：`pip install citation-map` 后，在报告页底部生成。
 - 换用其他前端：`PIP_SCHOLAR_FRONTEND=<构建目录> python run.py`。

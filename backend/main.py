@@ -14,7 +14,8 @@ from . import __version__, citemap, demo, openalex
 from .jobs import Jobs, load_report, map_dir, save_report
 from .nature_index import NatureIndex
 from .report import build_report, to_csv
-from .scholar import fetch_author, parse_scholar_id
+from .scholar import ScholarError, fetch_author, parse_scholar_id, proxy_mode
+from .scholar_html import parse_profile_html
 
 ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = Path(os.environ.get("PIP_SCHOLAR_FRONTEND", ROOT / "frontend"))
@@ -36,6 +37,12 @@ class ApiError(Exception):
 @app.exception_handler(ApiError)
 async def _api_error(_, exc):
     return JSONResponse(status_code=exc.status, content={"error": {"code": exc.code, "message": exc.message}})
+
+
+class ImportRequest(BaseModel):
+    html: str                # 浏览器保存的 Scholar 主页
+    query: str = ""          # 网页里找不到 ID 时用这里的链接或 ID
+    openalex: bool = True
 
 
 class ReportRequest(BaseModel):
@@ -68,7 +75,8 @@ def _cached_report(scholar_id):
 @app.get("/api/health")
 def health():
     return {"status": "ok", "version": __version__, "nature_index_journals": len(ni),
-            "openalex_key": bool(os.environ.get("OPENALEX_API_KEY")), "citation_map": citemap.available()}
+            "openalex_key": bool(os.environ.get("OPENALEX_API_KEY")), "scholar_proxy": proxy_mode(),
+            "citation_map": citemap.available()}
 
 
 @app.post("/api/reports")
@@ -83,6 +91,28 @@ def create_report(req: ReportRequest):
         return jobs.finished("report", sid)
     return jobs.submit("report", sid, f"report:{sid}:{req.openalex}",
                        lambda progress: _generate(sid, req.openalex, progress))
+
+
+@app.post("/api/reports/import")
+def import_report(req: ImportRequest):
+    """导入浏览器保存的 Scholar 主页（被限流时的备用方式），之后流程与抓取相同。"""
+    if len(req.html) > 30_000_000:
+        raise ApiError(400, "import_invalid", "file too large")
+    try:
+        author = parse_profile_html(req.html)
+    except ScholarError as e:
+        raise ApiError(400, e.code, str(e)) from e
+    author["scholar_id"] = author["scholar_id"] or parse_scholar_id(req.query)
+    if not author["scholar_id"]:
+        raise ApiError(400, "import_no_id", "Scholar ID not found in the page; enter the profile link too.")
+    sid = author["scholar_id"]
+
+    def run(progress):
+        client = openalex.Client() if req.openalex else None
+        enrich = (lambda pubs, name, prog: openalex.enrich(pubs, name, client, prog)) if client else None
+        save_report(build_report(author, ni, enrich=enrich, progress=progress, source="import"))
+
+    return jobs.submit("report", sid, f"import:{sid}:{id(author)}", run)
 
 
 @app.get("/api/jobs/{job_id}")

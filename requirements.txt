@@ -1,7 +1,9 @@
 fastapi
 uvicorn
 requests
+beautifulsoup4
 scholarly
 bibtexparser<2   # scholarly 1.7.x 与 bibtexparser 2.x 不兼容
+httpx<0.28       # scholarly 走代理时向 httpx 传 proxies 参数，0.28 起已移除
 # 可选：引用地图
 # citation-map

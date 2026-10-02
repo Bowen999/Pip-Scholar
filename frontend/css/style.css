@@ -143,6 +143,9 @@ body:not([data-view="home"]) :is(.hero__eyebrow, .display, .lede) { display: non
 .meter__fill { height: 100%; width: 0; background: var(--accent); transition: width .5s ease; }
 #error .status__title { max-width: 24em; font-size: clamp(24px, 3.2vw, 44px); line-height: 1.12; }
 #error .btn { margin-top: 28px; }
+.import-help { max-width: 46em; margin-top: 32px; }
+.import-help p { margin: 0 0 12px; }
+.import-help .btn { margin: 4px 0 0; font-size: 15px; min-height: 44px; }
 
 /* ---------- 报告 ---------- */
 .profile { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 40px; padding-block: clamp(40px, 7vw, 96px) 56px; }

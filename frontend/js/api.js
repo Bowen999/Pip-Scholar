@@ -29,6 +29,8 @@ const post = (path, body) => request(path, {
 
 export const createReport = (query, { openalex = true, refresh = false } = {}) =>
   post('/api/reports', { query, openalex, refresh });
+export const importReport = (html, query, { openalex = true } = {}) =>
+  post('/api/reports/import', { html, query, openalex });
 export const getJob = (id) => request(`/api/jobs/${enc(id)}`);
 export const getReport = (sid) => request(`/api/reports/${enc(sid)}`);
 export const createMap = (sid) => post(`/api/reports/${enc(sid)}/map`);

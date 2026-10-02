@@ -24,6 +24,8 @@ const state = {
   error: null,
   pubs: { q: '', filter: 'all', sort: 'citations', limit: PAGE },
   niAll: false,
+  source: 'scholar',  // scholar | import
+  lastImport: null,
   mapRunning: false,
 };
 
@@ -57,19 +59,35 @@ async function start(query, { refresh = false } = {}) {
     return;
   }
   err.hidden = true;
-  const run = ++state.run;
   state.query = query.trim();
-  state.options = { openalex: $('#opt-openalex').checked, refresh: refresh || $('#opt-refresh').checked };
+  $('#query').value = state.query;
+  const options = { openalex: $('#opt-openalex').checked, refresh: refresh || $('#opt-refresh').checked };
+  await follow(sid, options, 'scholar', () => api.createReport(state.query, options));
+}
+
+// 导入浏览器保存的 Scholar 主页（被限流时的备用方式）
+async function importPage(file) {
+  if (!file) return;
+  const query = $('#query').value.trim();
+  const options = { openalex: $('#opt-openalex').checked };
+  state.lastImport = file;
+  await follow(parseQuery(query) ?? '', options, 'import', async () => api.importReport(await file.text(), query, options));
+}
+
+// 创建任务 → 轮询进度 → 打开报告；出错时进入错误页
+async function follow(sid, options, source, createJob) {
+  const run = ++state.run;
+  state.source = source;
+  state.options = options;
   state.job = { scholar_id: sid, status: 'running', stage: null };
   state.started = Date.now();
   state.pubs = { q: '', filter: 'all', sort: 'citations', limit: PAGE };
-  $('#query').value = state.query;
   renderStatus();
   setView('loading');
   window.scrollTo({ top: 0 });
 
   try {
-    let job = await api.createReport(state.query, state.options);
+    let job = await createJob();
     while (job.status === 'running') {
       if (run !== state.run) return;
       state.job = job;
@@ -91,6 +109,7 @@ async function start(query, { refresh = false } = {}) {
 
 function showReport(report) {
   state.report = report;
+  if (report.source === 'import') $('#query').value = report.scholar_id;
   state.niAll = false;
   renderReport();
   setView('report');
@@ -108,14 +127,14 @@ function renderStatus() {
   const job = state.job;
   const stage = job.stage ?? 'scholar';
   const current = stage === 'done' ? STAGES.length : Math.max(0, STAGES.indexOf(stage));
-  $('#status-title').textContent = job.scholar_id === 'demo' ? t('report.demo') : job.scholar_id;
+  $('#status-title').textContent = job.scholar_id === 'demo' ? t('report.demo') : job.scholar_id || t('import.title');
   $('#steps').replaceChildren(...STAGES.map((s, i) => {
     const st = s === 'openalex' && !state.options.openalex ? 'skipped'
       : i < current ? 'done' : i === current ? 'current' : 'pending';
     const counting = s === 'openalex' && stage === 'openalex' && job.total;
     return h('li', { 'data-state': st, 'aria-current': st === 'current' ? 'step' : null },
       h('span', { class: 'step__num' }, String(i + 1).padStart(2, '0')),
-      h('span', { class: 'name' }, t(`stage.${s}`)),
+      h('span', { class: 'name' }, t(s === 'scholar' && state.source === 'import' ? 'stage.import' : `stage.${s}`)),
       h('span', { class: 'desc' }, counting ? `${fmt(job.done ?? 0)} / ${fmt(job.total)}` : t(`stage.${s}.desc`)));
   }));
   const frac = stage === 'openalex' && job.total
@@ -139,6 +158,8 @@ function renderError() {
   $('#error-title').textContent = errorText(state.error);
   const { code, message } = state.error;
   $('#error-detail').textContent = message && message !== code ? message : '';
+  // 抓取被限流或出错时，提示改用导入保存的网页
+  $('#import-help').hidden = !['scholar_unavailable', 'scholar_failed', 'proxy_failed', 'import_invalid', 'import_no_id'].includes(code);
 }
 
 // ---------- 报告 ----------
@@ -187,7 +208,8 @@ function renderReport() {
     ['publications', r.totals.publications, recent.papers],
     ['nature_index', r.totals.nature_index, recent.nature_index],
   ];
-  const overview = section('overview',
+  const partial = r.partial && h('p', { class: 'notice' }, t('import.partial'));
+  const overview = section('overview', partial,
     h('div', { class: 'kpis' }, kpis.map(([key, all, rec]) => h('div', { class: 'kpi' },
       h('p', { class: 'eyebrow' }, t(`kpi.${key}`)),
       h('p', { class: 'kpi__value' }, fmt(all)),
@@ -360,7 +382,8 @@ function profileView(r) {
   return h('header', { class: 'profile wrap' },
     h('div', {},
       h('p', { class: 'eyebrow' }, `${t('report.id')} · `, h('span', { class: 'id' }, r.scholar_id),
-        r.demo && h('span', { class: 'badge' }, t('report.demo'))),
+        r.demo && h('span', { class: 'badge' }, t('report.demo')),
+        r.source === 'import' && h('span', { class: 'badge' }, t('import.badge'))),
       h('h1', { class: 'profile__name', id: 'report-name', tabindex: '-1' }, p.name || r.scholar_id),
       p.affiliation && h('p', { class: 'profile__aff' }, p.affiliation),
       p.interests?.length > 0 && h('ul', { class: 'tags' }, p.interests.map((x) => h('li', {}, x))),
@@ -504,7 +527,12 @@ function init() {
     start($('#query').value);
   });
   $('#demo').addEventListener('click', () => start('demo'));
-  $('#retry').addEventListener('click', () => start(state.query));
+  $('#retry').addEventListener('click', () => (state.source === 'import' ? importPage(state.lastImport) : start(state.query)));
+  for (const button of document.querySelectorAll('[data-import]')) button.addEventListener('click', () => $('#import-file').click());
+  $('#import-file').addEventListener('change', (e) => {
+    importPage(e.target.files[0]);
+    e.target.value = '';  // 允许再次选择同一个文件
+  });
   setInterval(() => document.body.dataset.view === 'loading' && updateElapsed(), 1000);
 
   const id = new URLSearchParams(location.search).get('id');
