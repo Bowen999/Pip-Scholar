@@ -1,0 +1,4 @@
+scholarly
+requests
+# 可选：仅 --map 生成引用地图时需要
+# citation-map
