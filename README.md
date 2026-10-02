@@ -1,38 +1,39 @@
 # Pip-Scholar
 
-输入 Google Scholar 链接或 ID，一键生成个人学术报告：论文数量、引用数量、h-index、i10-index、Nature Index 论文数量，并可选生成 CitationMap（全球引用地图）。
+本地运行的 Web 应用：输入 Google Scholar 主页链接或 ID，生成学术统计与图表，界面支持中文 / English。
 
-统计按 **2 个时间维度 × 3 个作者身份维度**（共 6 个维度）展示：
-
-- 时间：全部 / 近 5 年（发表年份 ≥ 当年-5，与 Google Scholar "Since 20xx" 口径一致）
-- 作者身份：全部作者 / 第一作者+通讯作者 / 第一位一作+末位通讯作者
-
-## 安装
+## 运行
 
 ```bash
-pip install scholarly requests
-pip install citation-map   # 可选，仅 --map 生成引用地图时需要
+pip install -r requirements.txt
+python run.py          # 自动打开 http://127.0.0.1:8000
 ```
 
-## 用法
+输入 `demo` 可离线查看演示报告。
 
-```bash
-python3 scholar_report.py "https://scholar.google.ca/citations?user=A4H2UV8AAAAJ&hl=en"
-python3 scholar_report.py A4H2UV8AAAAJ            # 裸 ID 也可以
-python3 scholar_report.py A4H2UV8AAAAJ --map      # 生成 CitationMap（较慢，默认关闭）
-python3 scholar_report.py A4H2UV8AAAAJ --no-openalex  # 跳过作者身份补充
+## 输出
+
+- 指标：引用、h-index、i10-index、论文数、Nature Index 论文数（全部 / 近 5 年）
+- 六维统计：时间（全部 / 近 5 年，即发表年份 ≥ 今年 − 5）× 作者身份（全部作者 / 一作 + 通讯 / 第一位一作 + 末位通讯）
+- 图表：每年被引、每年发表、h-index 排序图、作者位置、Nature Index 学科、常发期刊；论文明细可筛选，并可导出 CSV
+
+## 结构
+
+```
+run.py      启动服务
+backend/    FastAPI：Scholar 抓取、Nature Index 匹配、OpenAlex 作者身份、统计、任务与缓存（接口文档 /docs）
+frontend/   静态前端（原生 JS + SVG，无需构建）
+tests/      pytest
+docs/       用 Figma 生成前端的 prompt
 ```
 
-输出保存在 `output_<scholar_id>/`：
+## 说明
 
-- `publications.csv` — 全部论文明细（含 Nature Index 标记、作者位置、是否通讯作者）
-- `citation_map.html` / `citation_info.csv` — 引用地图（加 `--map` 时生成）
-
-## 数据来源与口径
-
-- **学术指标与论文列表**：Google Scholar（经 [scholarly](https://github.com/scholarly-python-package/scholarly) 抓取；频繁请求会触发验证码限流，请控制频率）
-- **Nature Index 期刊名单**：`nature_index_journals.csv`，2026 年扩展版（177 期刊 + 1 会议，178 条），整理自 nature.com 官方 FAQ
-- **作者位置 / 通讯作者**：[OpenAlex](https://openalex.org)（出版社上报数据，通讯作者覆盖不全，统计为下限；共同第一作者不可见，"一作"按作者列表第一位认定）
-- **引用地图**：[CitationMap](https://github.com/ChenLiu-1996/CitationMap) 包（地理编码用 Nominatim 公共服务，可能限流）
-
-分维度统计中，各桶的引用数 / h-index / i10-index 由桶内论文的 Scholar 单篇被引数计算（"近 5 年"按论文发表年筛选，引用数为这些论文的总被引）。
+- 数据来源
+  - Google Scholar：经 scholarly 抓取，频繁请求会触发验证码。
+  - OpenAlex：提供作者位置与通讯作者。通讯作者覆盖不全，统计结果为下限。
+  - Nature Index 名单：共 178 种，见 `backend/data/`。
+- OpenAlex 自 2026 年起按量计费，无 key 每天 $0.10。建议申请免费 key（每天 $1）后这样启动：`OPENALEX_API_KEY=… python run.py`。
+- 引用地图（可选）：`pip install citation-map` 后，在报告页底部生成。
+- 换用其他前端：`PIP_SCHOLAR_FRONTEND=<构建目录> python run.py`。
+- 测试：`pip install pytest httpx && pytest`

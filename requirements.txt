@@ -1,4 +1,7 @@
-scholarly
+fastapi
+uvicorn
 requests
-# 可选：仅 --map 生成引用地图时需要
+scholarly
+bibtexparser<2   # scholarly 1.7.x 与 bibtexparser 2.x 不兼容
+# 可选：引用地图
 # citation-map

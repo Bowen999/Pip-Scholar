@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pip-Scholar</title>
+  <meta name="description" content="Google Scholar 学术报告：引用、h-index、Nature Index 论文与作者身份。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=Newsreader:opsz,wght@6..72,400..600&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@400;600&display=swap">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%230a0a0a'/%3E%3Crect x='6' y='18' width='5' height='8' fill='%23fff'/%3E%3Crect x='13.5' y='11' width='5' height='15' fill='%23fff'/%3E%3Crect x='21' y='6' width='5' height='20' fill='%232b44ff'/%3E%3C/svg%3E">
+  <script type="module" src="js/app.js"></script>
+</head>
+<body data-view="home">
+  <a class="skip" href="#main" data-i18n="skip">跳到内容</a>
+
+  <header class="masthead">
+    <div class="wrap masthead__inner">
+      <a class="wordmark" href="./">Pip<span aria-hidden="true">—</span>Scholar</a>
+      <span class="masthead__tag" data-i18n="app.tag"></span>
+      <div class="seg" role="group" data-i18n-aria-label="lang.label">
+        <button type="button" data-lang="zh" lang="zh-CN">中文</button>
+        <button type="button" data-lang="en" lang="en">EN</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" aria-labelledby="hero-title">
+      <p class="eyebrow hero__eyebrow" data-i18n="hero.eyebrow"></p>
+      <h1 class="display" id="hero-title" data-i18n="hero.title"></h1>
+      <p class="lede" data-i18n="hero.lede"></p>
+
+      <form class="search" id="search" novalidate>
+        <label class="eyebrow" for="query" data-i18n="form.label"></label>
+        <div class="search__row">
+          <input id="query" name="query" type="text" autocomplete="off" spellcheck="false"
+                 data-i18n-placeholder="form.placeholder" aria-describedby="query-error">
+          <button class="btn btn--primary" type="submit">
+            <span data-i18n="form.submit"></span><span class="arrow" aria-hidden="true">→</span>
+          </button>
+        </div>
+        <p class="search__error" id="query-error" role="alert" hidden></p>
+        <div class="search__opts">
+          <label class="check"><input type="checkbox" id="opt-openalex" checked> <span data-i18n="form.openalex"></span></label>
+          <label class="check"><input type="checkbox" id="opt-refresh"> <span data-i18n="form.refresh"></span></label>
+          <button type="button" class="link" id="demo"><span data-i18n="form.demo"></span> →</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="band" aria-hidden="true"><div class="band__track" id="band"></div></div>
+
+    <section class="status wrap" id="status" hidden aria-live="polite" aria-labelledby="status-title">
+      <p class="eyebrow" data-i18n="status.eyebrow"></p>
+      <h2 class="status__title" id="status-title"></h2>
+      <ol class="steps" id="steps"></ol>
+      <div class="meter"><div class="meter__fill" id="meter"></div></div>
+      <p class="note"><span id="elapsed"></span> · <span data-i18n="status.note"></span></p>
+    </section>
+
+    <section class="status wrap" id="error" hidden role="alert" aria-labelledby="error-title">
+      <p class="eyebrow" data-i18n="error.eyebrow"></p>
+      <h2 class="status__title" id="error-title"></h2>
+      <p class="note" id="error-detail"></p>
+      <button type="button" class="btn" id="retry"><span data-i18n="error.retry"></span> <span aria-hidden="true">↻</span></button>
+    </section>
+
+    <article class="report" id="report" hidden></article>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <div class="footer__text">
+        <p data-i18n="footer.sources"></p>
+        <p data-i18n="footer.local"></p>
+      </div>
+      <p class="wordmark wordmark--footer" aria-hidden="true">Pip—Scholar</p>
+    </div>
+  </footer>
+</body>
+</html>
